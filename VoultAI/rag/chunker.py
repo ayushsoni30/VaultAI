@@ -4,11 +4,17 @@ def chunk_text(text, chunk_size=500, overlap=50):
     start = 0
 
     while start < len(text):
+
         end = start + chunk_size
 
-        chunk = text[start:end]
+        if end < len(text):
+            while end > start and not text[end].isspace():
+                end -= 1
+
+        chunk = text[start:end].strip()
+
         chunks.append(chunk)
 
-        start += chunk_size - overlap
+        start = end - overlap
 
     return chunks

@@ -12,12 +12,15 @@ def home():
 @app.get("/test")
 def test():
     text= extract_text_from_pdf("data/rag_sample.pdf")
+    return {
+        "characters": len(text),
+        "preview": text[:1000]
+    }
+@app.get("/chunks")
+def get_chunks():
+    text = extract_text_from_pdf("data/rag_sample.pdf")
     chunks = chunk_text(text)
     return {
         "total_chunks": len(chunks),
         "chunks": chunks
     }
-    # return {
-    #     "characters": len(text),
-    #     "preview": text[:1000]
-    # }
