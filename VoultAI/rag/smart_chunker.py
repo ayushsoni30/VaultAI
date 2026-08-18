@@ -40,23 +40,18 @@ def clean_text(text):
 
 def split_sections(text):
     """
-    Detect numbered sections even when PDF extraction
-    has flattened line breaks.
+    Detect numbered sections.
 
-    Example:
-
-    1. About TechVision
-    ...
-    2. Product Lineup
-    ...
+    Examples:
+        1. About TechVision
+        2. Product Lineup
+        3. Core Features
+        4. Customer Use Cases
     """
 
-    pattern = r"(?=\b\d+\.\s+[A-Z][A-Za-z &\-]+)"
+    pattern = r"(?=\b\d+\.\s+[A-Z][A-Za-z0-9 &,\-]+)"
 
-    sections = re.split(
-        pattern,
-        text
-    )
+    sections = re.split(pattern, text)
 
     return [
         section.strip()
@@ -66,6 +61,9 @@ def split_sections(text):
 
 
 def split_sentences(text):
+    """
+    Split text into sentences.
+    """
 
     sentences = re.split(
         r"(?<=[.!?])\s+",
@@ -80,6 +78,10 @@ def split_sentences(text):
 
 
 def split_large_text(text, chunk_size):
+    """
+    Split a sentence that is larger than chunk_size
+    without breaking words.
+    """
 
     words = text.split()
 
@@ -108,38 +110,62 @@ def split_large_text(text, chunk_size):
 
 
 def chunk_section(section, chunk_size):
+    """
+    Split a section into smaller chunks while
+    preserving the section heading.
+    """
 
-    # Section fits
+    lines = section.split("\n")
+
+    # First line is treated as section heading
+    heading = lines[0].strip()
+
+    body = "\n".join(lines[1:]).strip()
+
+    # If entire section fits
     if len(section) <= chunk_size:
         return [section]
 
-    sentences = split_sentences(section)
+    sentences = split_sentences(body)
 
     chunks = []
     current = ""
 
     for sentence in sentences:
 
-        # Sentence is too large
+        # Sentence itself is too large
         if len(sentence) > chunk_size:
 
             if current:
-                chunks.append(current)
+
+                chunks.append(
+                    heading + "\n" + current
+                )
+
                 current = ""
 
             large_chunks = split_large_text(
                 sentence,
-                chunk_size
+                chunk_size - len(heading) - 1
             )
 
-            chunks.extend(
-                large_chunks
-            )
+            for large_chunk in large_chunks:
+
+                chunks.append(
+                    heading + "\n" + large_chunk
+                )
 
             continue
 
-        # Sentence fits
-        if len(current) + len(sentence) + 1 <= chunk_size:
+        # Sentence fits current chunk
+        if (
+            len(current)
+            + len(sentence)
+            + 1
+            + len(heading)
+            + 1
+            <= chunk_size
+        ):
 
             current += (
                 " " if current else ""
@@ -148,12 +174,19 @@ def chunk_section(section, chunk_size):
         else:
 
             if current:
-                chunks.append(current)
+
+                chunks.append(
+                    heading + "\n" + current
+                )
 
             current = sentence
 
+    # Last chunk
     if current:
-        chunks.append(current)
+
+        chunks.append(
+            heading + "\n" + current
+        )
 
     return chunks
 
@@ -162,6 +195,11 @@ def add_overlap_to_section_chunks(
     chunks,
     overlap
 ):
+    """
+    Add overlap between chunks.
+
+    The overlap is taken from the previous chunk.
+    """
 
     if overlap <= 0:
         return chunks
@@ -200,11 +238,29 @@ def add_overlap_to_section_chunks(
 
         if overlap_text:
 
-            chunk = (
-                overlap_text
-                + " "
-                + chunk
-            )
+            # Don't duplicate heading
+            lines = chunk.split("\n", 1)
+
+            if len(lines) == 2:
+
+                heading = lines[0]
+                body = lines[1]
+
+                chunk = (
+                    heading
+                    + "\n"
+                    + overlap_text
+                    + " "
+                    + body
+                )
+
+            else:
+
+                chunk = (
+                    overlap_text
+                    + " "
+                    + chunk
+                )
 
         final_chunks.append(chunk)
 
@@ -217,13 +273,19 @@ def smart_chunk(
     overlap=50,
     source="unknown"
 ):
+    """
+    Main smart chunking pipeline.
+    """
 
+    # Step 1: Clean text
     text = clean_text(text)
 
+    # Step 2: Detect sections
     sections = split_sections(text)
 
     all_chunks = []
 
+    # Step 3: Process every section
     for section in sections:
 
         section_chunks = chunk_section(
@@ -231,6 +293,7 @@ def smart_chunk(
             chunk_size
         )
 
+        # Step 4: Add overlap
         section_chunks = (
             add_overlap_to_section_chunks(
                 section_chunks,
@@ -242,19 +305,20 @@ def smart_chunk(
             section_chunks
         )
 
-    # Create metadata
+    # Step 5: Create metadata
     documents = []
 
     for index, chunk in enumerate(all_chunks):
 
-        first_line = chunk.split("\n")[0]
+        lines = chunk.split("\n")
+
+        section = lines[0].strip()
 
         documents.append({
             "chunk_id": index,
             "text": chunk,
-            "section": first_line,
+            "section": section,
             "source": source
         })
 
     return documents
-    

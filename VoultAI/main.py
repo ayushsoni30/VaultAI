@@ -2,6 +2,7 @@ from fastapi import FastAPI
 
 from rag.loader import extract_text_from_pdf
 from rag.smart_chunker import smart_chunk
+from rag.embedding import smart_chunk
 
 
 app = FastAPI()
@@ -13,14 +14,11 @@ def home():
         "message": "Welcome to VoultAI!"
     }
 
-@app.get("/test")
-def test():
+@app.get("/chunks")
+def chunks():
+    text = extract_text_from_pdf("data/sample.pdf")
 
-    text = extract_text_from_pdf(
-        "data/sample.pdf"
-    )
-
-    chunks = smart_chunk(
+    result = smart_chunk(
         text,
         chunk_size=500,
         overlap=50,
@@ -28,6 +26,6 @@ def test():
     )
 
     return {
-        "total_chunks": len(chunks),
-        "chunks": chunks
+        "total_chunks": len(result),
+        "chunks": result
     }
