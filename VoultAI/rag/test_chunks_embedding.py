@@ -37,4 +37,4 @@ for i, (chunk, embedding) in enumerate(zip(chunks, embeddings)):
     print("Vector length:", len(embedding))
     print("First 5 values:", embedding[:5])
 
-    print("-" * 60)cd..
+    print("-" * 60)
