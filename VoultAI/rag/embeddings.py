@@ -1,11 +1,13 @@
 from sentence_transformers import SentenceTransformer
 
 
-# Load embedding model once
 model = SentenceTransformer("all-MiniLM-L6-v2")
 
 
 def create_embedding(text: str):
+    """
+    Create embedding for a single piece of text.
+    """
 
     embedding = model.encode(text)
 
@@ -13,6 +15,9 @@ def create_embedding(text: str):
 
 
 def create_embeddings(texts: list[str]):
+    """
+    Create embeddings for multiple chunks.
+    """
 
     embeddings = model.encode(texts)
 

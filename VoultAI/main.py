@@ -2,7 +2,7 @@ from fastapi import FastAPI
 
 from rag.loader import extract_text_from_pdf
 from rag.smart_chunker import smart_chunk
-from rag.embedding import smart_chunk
+from rag.embeddings import smart_chunk
 
 
 app = FastAPI()

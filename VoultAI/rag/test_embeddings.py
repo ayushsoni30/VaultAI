@@ -1,7 +1,7 @@
-from rag.embeddings import create_embedding
+from embeddings import create_embedding
 
 
-text = "Pradhan Mantri Awas Yojana provides housing assistance."
+text = "What is artificial intelligence?"
 
 vector = create_embedding(text)
 
